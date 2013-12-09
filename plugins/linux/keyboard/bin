@@ -1,0 +1,16 @@
+#!/bin/bash
+eval "$(cat ./config)"
+if [ ! -z $keydevice ]; then
+  echo "Reading bytes from ${keydevice}"
+  while true; do
+    pressed="$(echo $(sudo timeout 15 cat ${keydevice}))"
+    count=$(expr "$(echo ${pressed} | wc -c - | cut -d\  -f1)" / 53)
+    echo "|${count}|"
+    apm=$(expr "$(echo ${count})" \* 4)
+    echo "APM ≅ ${apm}"
+  done
+else
+  if [ ! -z $keyfile ]; then 
+    echo "Reading decoded key presses from ${keyfile}"
+  fi
+fi

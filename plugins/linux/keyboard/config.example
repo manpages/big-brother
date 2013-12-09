@@ -1,0 +1,2 @@
+keyfile="/tmp/hellokitty.txt"
+device="/dev/input/event0"
