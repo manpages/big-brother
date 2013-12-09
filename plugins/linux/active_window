@@ -1,0 +1,16 @@
+#!/bin/bash  
+ 
+wnd_focus=$(xdotool getwindowfocus)
+wnd_title=$(xprop -id $wnd_focus WM_NAME)
+wnd_class=$(xprop -id $wnd_focus WM_CLASS)
+lookfor='"(.*)"'
+ 
+if [[ "$wnd_class" =~ $lookfor ]]; then
+  wnd_class=${BASH_REMATCH[1]}
+  echo "${wnd_class//\"/}"
+fi
+
+if [[ "$wnd_title" =~ $lookfor ]]; then
+  wnd_title=${BASH_REMATCH[1]}
+  echo "$wnd_title"
+fi
