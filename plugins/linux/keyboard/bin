@@ -4,13 +4,12 @@ if [ ! -z $keydevice ]; then
   echo "Reading bytes from ${keydevice}"
   i=0
   while true; do
-    pressed="$(echo $(sudo timeout 10 cat ${keydevice}))"
+    pressed="$(echo $(sudo timeout 60 cat ${keydevice}))"
     count=$(expr "$(echo ${pressed} | wc -c - | cut -d\  -f1)" / 53)
-    echo "|${count}|"
-    apm=$(expr ${count} \* 6)
+    apm=$(expr ${count} \* 1)
     echo "APM ≅ ${apm}"
     echo "${i} ${apm}" >> /tmp/apm
-    i=$(expr "$i" + 10)
+    i=$(expr "$i" + 1)
   done
 else
   if [ ! -z $keyfile ]; then 
