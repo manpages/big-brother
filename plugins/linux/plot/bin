@@ -1,0 +1,10 @@
+#!/bin/bash
+eval "$(cat ./config)"
+for f in ${datafiles[@]}; do
+  echo "Rendering ${f}."
+  echo | gnuplot <<EOF
+  set terminal gif font 'calibri,20' size 800,600 enhanced
+  set output '/tmp/$(echo "$(basename ${f})").gif'
+  plot '/tmp/apm' with line
+EOF
+done
