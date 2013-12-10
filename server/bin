@@ -1,0 +1,56 @@
+#!/usr/bin/ruby
+
+require 'socket'
+
+def reply(resp, client)
+  headers = ["http/1.1 200 ok",
+             "date: tue, 14 dec 2010 13:37:42 gmt",
+             "server: ruby",
+             "content-type: text/html; charset=utf-8",
+             "content-length: #{resp.length}\r\n\r\n"].join("\r\n")
+  client.puts headers
+  client.puts resp
+  client.close 
+end
+
+def reply_file(path, client)
+  filename = path[2]
+  if File.exists? "/tmp/" + filename
+    data = File.open("/tmp/" + filename, "rb") {|io| io.read}
+    reply(data, client)
+  else
+    reply("hooytam", client)
+  end
+end
+
+
+server = TCPServer.open 8080
+
+Process.spawn "setsid server/daemonize_plugins"
+
+puts "Big Brother is watching you on port 8080."
+
+loop {
+  client = server.accept
+
+  lines = []
+  while line = client.gets and line !~ /^\s*$/
+    lines << line.chomp
+  end
+
+  puts lines[0]
+  request = lines[0].split ' '
+  meth = request[0]
+  path = (request[1].chomp '/').split '/'
+
+  unless meth == "GET"
+    reply_404(client)
+  end
+
+  if path[1] == "priv"
+    reply_file(path, client)
+  else
+    # Hardcoded path. Makes me sad but not enough fucks is given.
+    reply File.open("server/index.html", "rb") {|io| io.read}, client
+  end
+}
