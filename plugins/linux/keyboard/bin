@@ -1,15 +1,13 @@
 #!/bin/bash
 abs="$(dirname $(readlink -f "$0"))"
 eval "$(cat ${abs}/config)"
-i=0
 if [ ! -z $keydevice ]; then
   echo "Reading bytes from ${keydevice}"
   pressed="$(echo $(sudo timeout 60 cat ${keydevice}))"
   count=$(expr "$(echo ${pressed} | wc -c - | cut -d\  -f1)" / 53)
   apm=$(expr ${count} \* 1)
   echo "APM ≅ ${apm}"
-  echo "${i} ${apm}" >> /tmp/apm
-  i=$(expr "$i" + 1)
+  echo "${apm}" >> /tmp/apm
 else
   if [ ! -z $keyfile ]; then 
     echo "Reading decoded key presses from ${keyfile} is not implemented."
