@@ -1,5 +1,8 @@
 #!/bin/bash  
  
+abs="$(dirname $(readlink -f "$0"))"
+eval "$(cat ${abs}/config)"
+
 wnd_focus=$(xdotool getwindowfocus)
 wnd_title=$(xprop -id $wnd_focus WM_NAME)
 wnd_class=$(xprop -id $wnd_focus WM_CLASS)
@@ -7,10 +10,22 @@ lookfor='"(.*)"'
  
 if [[ "$wnd_class" =~ $lookfor ]]; then
   wnd_class=${BASH_REMATCH[1]}
-  echo "${wnd_class//\"/}"
 fi
 
 if [[ "$wnd_title" =~ $lookfor ]]; then
   wnd_title=${BASH_REMATCH[1]}
-  echo "$wnd_title"
 fi
+
+for a in ${activity[@]}; do
+  activity=$(echo $a | cut -d\: -f1)
+  class=$(echo $a | cut -d\: -f2)
+  name=$(echo $a | cut -d\: -f3)
+  if [[ "$wnd_title" =~ $name ]]; then
+    echo "Matched activity ${activity}"
+    exit 0
+  fi
+  if [[ "$wnd_class" =~ $class ]]; then
+    echo "Matched activity ${activity}"
+    exit 0
+  fi
+done
