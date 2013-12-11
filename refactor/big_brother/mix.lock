@@ -1,6 +1,0 @@
-[ "cowboy": {:git, "git://github.com/extend/cowboy.git", "9f33a20d9425daf7491836e73f503c206cc170be", []},
-  "cowlib": {:git, "git://github.com/extend/cowlib.git", "63298e8e160031a70efff86a1acde7e7db1fcda6", [{:ref, "0.4.0"}]},
-  "epgsql": {:git, "git://github.com/spawngrid/epgsql.git", "a5912d63ec64aec9d80414c7c80fa98aade6e4fc", []},
-  "exdbi": {:git, "git://github.com/exdbi/exdbi.git", "d97bbf7604c6b21b3d58071e8e7f179de72d8151", []},
-  "exdbi_pgsql": {:git, "git://github.com/exdbi/exdbi_pgsql.git", "958bbc52b611c0ea9240f4e6c50286469c78bb37", []},
-  "ranch": {:git, "git://github.com/extend/ranch.git", "5df1f222f94e08abdcab7084f5e13027143cc222", [{:ref, "0.9.0"}]} ]

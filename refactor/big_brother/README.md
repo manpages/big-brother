@@ -1,3 +1,0 @@
-# BigBrother
-
-** TODO: Add description **
