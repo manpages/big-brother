@@ -79,15 +79,35 @@ def get_activities(last = 86400)
 end
 
 def log_activity(activity)
-  last_utime = Integer(`#{sql} "select utime from activity order by utime desc limit 1;"`.chomp)
-  now        = Integer(`#{sql} "select strftime('%s', 'now');"`.chomp)
+  last_utime = `#{sql} "select utime from activity order by utime desc limit 1 offset 1;"`.chomp
+  now        = `#{sql} "select strftime('%s', 'now');"`.chomp
+  last_apm   = `#{sql} "select sum(apm) from apm where utime > (select strftime('%s', 'now'-360))"`.chomp
+  unless last_utime == ""
+    last_utime = Integer(last_utime)
+  else
+    last_utime = -121
+  end
+  unless now == ""
+    now = Integer(now)
+  else
+    now = 0
+  end
+  unless last_apm == ""
+    last_apm = Integer(last_apm)
+  else
+    last_apm = 0
+  end
   if get_last_activity.chomp == activity or now - last_utime < 120
-    #`#{sql} "update activity set utime=(select strftime('%s','now')) where utime=(
-    #          select utime from activity order by utime desc limit 1
-    #        );"`
+    `#{sql} "update activity set utime=(select strftime('%s','now')) where utime=(
+              select utime from activity order by utime desc limit 1
+            );"`
     return
   else
-    `#{sql} "insert into activity (utime, name) values ((select strftime('%s','now')), '#{activity}');"`
+    if last_apm == 0 and activity != "movies"
+      `#{sql} "insert into activity (utime, name) values ((select strftime('%s','now')), 'afk');"`
+    else
+      `#{sql} "insert into activity (utime, name) values ((select strftime('%s','now')), '#{activity}');"`
+    end
   end
 end
 
@@ -134,7 +154,6 @@ def activityd
 end
 
 def main
-  plot
   db!
   # Sup dawg, we herd u like daemonz
   server = TCPServer.open 1985
