@@ -1,0 +1,171 @@
+#!/usr/bin/ruby
+#
+# I'm frustrated about the current state of deployment of fucking scripts.
+# Programs in python and ruby are fucking scripts, those should be deployable
+# like G-d damn PHP shit or statically linked binaries. With all the fucking
+# libraries included, without conflicts with ridiculous policies of different
+# distros of Linux (yes, Arch Linux, I'm talking about you). 
+# I'm not saying that this should be the only way to deploy those, I'm saying 
+# that it's a sane requirement to be able to share your work with the End User.
+# You hacked something over a day or two and you must be able to make a fucking
+# release. Look at Erlang. Well, okay, Erlang is an engineering masterpiece,
+# but why can't scripting languages learn something about the pros and cons
+# of releases?
+#
+# And script writers should use fucking Makefiles to put their shit where it
+# needs to go and to revert it after user is frustrated with the fact that 
+# installed scripts are slow as fuck and don't do what they should.
+# I wanted to write a software that will be cross platform, that can be 
+# extended to work on Шindoшs, that can help all the people to organize the
+# time they spend behind the computer desk better... instead I have ended up
+# with another program for nerds. Yeah, maybe it's me who sucks, maybe I don't
+# push it too hard, don't use ``XMLConfigGeneratorFactorySingleton`` to provide
+# the End User the most satisfying experience possible, but I prefer to think 
+# that the world where we need XMLConfigGeneratorFactorySingletons to do
+# things in a way that doesn't suck needs to be fixed.
+#
+# I thank G-d for shell script.
+#                                                 ~ Jonn Mostovoy, 12/12/2013
+
+require 'socket'
+
+def reply(resp, client)
+  headers = ["http/1.1 200 ok",
+             "date: tue, 14 dec 2010 13:37:42 gmt",
+             "server: ruby",
+             "content-type: text/html; charset=utf-8",
+             "content-length: #{resp.length}\r\n\r\n"].join("\r\n")
+  client.puts headers
+  client.puts resp
+  client.close 
+end
+
+def reply_file(path, client)
+  filename = path[2]
+  if File.exists? "/tmp/" + filename
+    data = File.open("/tmp/" + filename, "rb") {|io| io.read}
+    reply(data, client)
+  else
+    reply("hooytam", client)
+  end
+end
+
+def sql
+  "sqlite3 bb.db"
+end
+
+def db!
+  create="#{sql} \"create table if not exists"
+  `#{create} apm (apm int, utime int);"`
+  `#{create} activity (name varchar, utime int);"`
+end
+
+def get_last_activity
+  `#{sql} "select name from activity order by utime desc limit 1;"`
+end
+
+def log_activity(activity)
+  if get_last_activity.chomp == activity
+    `#{sql} "update activity set utime=(select strftime('%s','now')) where utime=(
+              select utime from activity order by utime desc limit 1
+            );"`
+  else
+    `#{sql} "insert into activity (utime, name) values ((select strftime('%s','now')), '#{activity}');"`
+  end
+end
+
+def get_last_apm
+  `#{sql} "select apm from apm order by utime desc limit 1;"`
+end
+
+def log_apm(apm)
+  `#{sql} "insert into apm (utime, apm) values ((select strftime('%s','now')), #{apm});"`
+end
+
+def apmd
+  trap('USR1') do
+    puts "Shutting down AMP daemon"
+    exit
+  end
+  loop {
+    apm=`./keyboard`.chomp
+    log_apm apm
+  }
+end
+
+def activityd
+  trap('USR1') do
+    puts "Shutting down activity daemon"
+    exit
+  end
+  loop {
+    sleep 2
+    activity=`./activity`.chomp
+    log_activity activity
+  }
+end
+
+def main
+  db!
+  # Sup dawg, we herd u like daemonz
+  server = TCPServer.open 1985
+  pid1 = fork {
+    apmd
+  }
+  pid2 = fork {
+    activityd
+  }
+  trap('USR1') do
+    puts "Shutting down daemons"
+    Process.kill('USR1', pid1)
+    Process.wait(pid1)
+    Process.kill('USR1', pid2)
+    Process.wait(pid2)
+    exit
+  end
+end
+
+pid = fork {
+  main
+}
+
+server = TCPServer.open 1984
+puts "Big Brother is watching you on port 1984."
+
+trap('INT') do
+  puts "Shutting down gracefully"
+  Process.kill('USR1', pid)
+  Process.wait(pid)
+  exit
+end
+
+loop {
+  client = server.accept
+
+  lines = []
+  while line = client.gets and line !~ /^\s*$/
+    lines << line.chomp
+  end
+
+  puts lines[0]
+  request = lines[0].split ' '
+  meth = request[0]
+  path = (request[1].chomp '/').split '/'
+
+  unless meth == "GET"
+    reply_404(client)
+  end
+
+  if path[1] == "priv"
+    reply_file(path, client)
+  end
+  if path[1] == "activity"
+    reply_file(get_last_activity, client)
+  end
+  if path[1] == "apm"
+    reply_file(get_last_apm, client)
+  else
+    # Hardcoded path. Makes me sad but not enough fucks is given.
+    reply File.open("server/index.html", "rb") {|io| io.read}, client
+  end
+}

@@ -1,17 +1,16 @@
 #!/bin/bash
 abs="$(dirname $(readlink -f "$0"))"
-eval "$(cat ${abs}/config)"
+eval "$(cat ${abs}/keyboard.conf)"
 if [ ! -z $keydevice ]; then
-  echo "Reading bytes from ${keydevice}"
   pressed="$(echo $(sudo timeout 60 cat ${keydevice}))"
   count=$(expr "$(echo ${pressed} | wc -c - | cut -d\  -f1)" / 53)
   apm=$(expr ${count} \* 1)
-  echo "APM ≅ ${apm}"
-  echo "${apm}" >> /tmp/apm
+  echo $apm
+  exit 0
 else
   if [ ! -z $keyfile ]; then 
-    echo "Reading decoded key presses from ${keyfile} is not implemented."
+    exit 1
   else
-    echo "Your config sucks balls."
+    exit -1
   fi
 fi
