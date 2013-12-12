@@ -74,15 +74,14 @@ end
 
 def get_activities(last = 86400)
   `#{sql} "select (select time(utime, 'unixepoch', 'localtime')), name from activity 
-             where utime > (select strftime('%s','now'-#{last}))
+             where utime > (select strftime('%s','now'))-#{last}
              order by utime desc;"` 
 end
 
 def log_activity(activity)
-  puts "Trying to log #{activity}"
   last_utime = `#{sql} "select utime from activity order by utime desc limit 1 offset 1;"`.chomp
   now        = `#{sql} "select strftime('%s', 'now');"`.chomp
-  last_apm   = `#{sql} "select sum(apm) from apm where utime > (select strftime('%s', 'now'-360))"`.chomp
+  last_apm   = `#{sql} "select sum(apm) from apm where utime > (select strftime('%s', 'now'))-360"`.chomp
   unless last_utime == ""
     last_utime = Integer(last_utime)
   else
@@ -115,7 +114,7 @@ def get_last_apm
 end
 
 def get_apm(last = 86400)
-  `#{sql} "select apm from apm where utime > (select strftime('%s', 'now'-#{last}));"`
+  `#{sql} "select apm from apm where utime > (select strftime('%s', 'now'))-#{last};"`
 end
 
 def log_apm(apm)
