@@ -27,6 +27,14 @@
 # I thank G-d for shell script.
 #                                                 ~ Jonn Mostovoy, 12/12/2013
 
+
+# P.S.
+# This code is written in two feelings:
+#   1. Frustration
+#   2. Desperation
+# Hence, it sucks big time. If you want to point it out, you should rewrite
+# it instead.
+
 require 'socket'
 
 def reply(resp, client)
@@ -64,11 +72,20 @@ def get_last_activity
   `#{sql} "select name from activity order by utime desc limit 1;"`
 end
 
+def get_activities(last = 86400)
+  `#{sql} "select (select time(utime, 'unixepoch', 'localtime')), name from activity 
+             where utime > (select strftime('%s','now'-#{last}))
+             order by utime desc;"` 
+end
+
 def log_activity(activity)
-  if get_last_activity.chomp == activity
-    `#{sql} "update activity set utime=(select strftime('%s','now')) where utime=(
-              select utime from activity order by utime desc limit 1
-            );"`
+  last_utime = Integer(`#{sql} "select utime from activity order by utime desc limit 1;"`.chomp)
+  now        = Integer(`#{sql} "select strftime('%s', 'now');"`.chomp)
+  if get_last_activity.chomp == activity or now - last_utime < 120
+    #`#{sql} "update activity set utime=(select strftime('%s','now')) where utime=(
+    #          select utime from activity order by utime desc limit 1
+    #        );"`
+    return
   else
     `#{sql} "insert into activity (utime, name) values ((select strftime('%s','now')), '#{activity}');"`
   end
@@ -78,8 +95,19 @@ def get_last_apm
   `#{sql} "select apm from apm order by utime desc limit 1;"`
 end
 
+def get_apm(last = 86400)
+  `#{sql} "select apm from apm where utime > (select strftime('%s', 'now'-#{last}));"`
+end
+
 def log_apm(apm)
   `#{sql} "insert into apm (utime, apm) values ((select strftime('%s','now')), #{apm});"`
+  plot
+end
+
+def plot(from = '/tmp/apm')
+  cmd="echo \"#{get_apm}\" > #{from}"
+  `#{cmd}`
+  `./plot`
 end
 
 def apmd
@@ -106,6 +134,7 @@ def activityd
 end
 
 def main
+  plot
   db!
   # Sup dawg, we herd u like daemonz
   server = TCPServer.open 1985
@@ -147,7 +176,6 @@ loop {
     lines << line.chomp
   end
 
-  puts lines[0]
   request = lines[0].split ' '
   meth = request[0]
   path = (request[1].chomp '/').split '/'
@@ -156,16 +184,15 @@ loop {
     reply_404(client)
   end
 
-  if path[1] == "priv"
+  case path[1]
+  when "priv"
     reply_file(path, client)
-  end
-  if path[1] == "activity"
+  when "activity"
     reply_file(get_last_activity, client)
-  end
-  if path[1] == "apm"
+  when "apm"
     reply_file(get_last_apm, client)
   else
     # Hardcoded path. Makes me sad but not enough fucks is given.
-    reply File.open("server/index.html", "rb") {|io| io.read}, client
+    reply((File.open("./index.html", "rb") {|io| io.read}).gsub(/=ACTIVITY/, get_activities), client)
   end
 }

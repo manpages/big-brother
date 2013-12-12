@@ -1,6 +1,6 @@
 #!/bin/bash
 abs="$(dirname $(readlink -f "$0"))"
-eval "$(cat ${abs}/config)"
+eval "$(cat ${abs}/plot.conf)"
 for f in ${datafiles[@]}; do
   echo "Rendering ${f}."
   echo | gnuplot <<EOF
