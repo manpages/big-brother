@@ -146,7 +146,7 @@ def activityd
     exit
   end
   loop {
-    sleep 5
+    sleep 10
     activity=`./activity`.chomp
     log_activity activity
   }
