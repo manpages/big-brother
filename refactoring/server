@@ -131,9 +131,9 @@ def plot(from = '/tmp/apm')
 end
 
 def apmd
-  trap('USR1') do
+  trap('USR2') do
     puts "Shutting down AMP daemon"
-    exit
+    return
   end
   loop {
     apm=`./keyboard`.chomp
@@ -142,9 +142,9 @@ def apmd
 end
 
 def activityd
-  trap('USR1') do
+  trap('HUP') do
     puts "Shutting down activity daemon"
-    exit
+    return
   end
   loop {
     sleep 10
@@ -165,11 +165,11 @@ def main
   }
   trap('USR1') do
     puts "Shutting down daemons"
-    Process.kill('USR1', pid1)
+    Process.kill('USR2', pid1)
     Process.wait(pid1)
-    Process.kill('USR1', pid2)
+    Process.kill('HUP', pid2)
     Process.wait(pid2)
-    exit
+    return
   end
 end
 
@@ -182,6 +182,7 @@ puts "Big Brother is watching you on port 1984."
 
 trap('INT') do
   puts "Shutting down gracefully"
+  log_activity 'afk'
   Process.kill('USR1', pid)
   Process.wait(pid)
   exit
