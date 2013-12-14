@@ -104,7 +104,7 @@ def log_activity(activity)
     activity='afk'
   end
   if get_last_activity.chomp == activity
-  `#{sql} "update activity set utime=(select strftime('%s','now')), streak=streak+10 where utime=(
+  `#{sql} "update activity set utime=(select strftime('%s','now')), streak=(select strftime('%s','now')-#{last_utime}) where utime=(
             select utime from activity order by utime desc limit 1
           );"`
   else
