@@ -1,7 +1,0 @@
-every=5
-activity=('coding:.\*:.*VIM'
-          'coding:.\*:manpages.*'
-          'social:.\*:Twitter.*'
-          'social:skype.*:.\*'
-          'movies:.\*:.*MPlayer'
-          'reading:evince.*:.\*') 

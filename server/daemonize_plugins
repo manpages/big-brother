@@ -1,7 +1,0 @@
-#!/bin/bash
-for x in plugins/linux/*; do
-  echo "Daemonizing $x"
-  eval "$(cat ${x}/config)"
-  every="$([ -z $every ] && echo 0 || echo $every)"
-  setsid /bin/bash -c "while true; do $x/bin; sleep $every; done" &
-done

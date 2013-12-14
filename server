@@ -77,7 +77,8 @@ def get_activities(last = 86400)
                   name
            from activity 
              where utime > (select strftime('%s','now'))-#{last}
-             group by name;"` 
+             group by name
+             order by sum(streak) desc;"` 
 end
 
 def log_activity(activity)
