@@ -37,6 +37,8 @@
 
 require 'socket'
 
+$streak = 0
+
 def reply(resp, client)
   headers = ["http/1.1 200 ok",
              "date: tue, 14 dec 2010 13:37:42 gmt",
@@ -82,13 +84,30 @@ def get_activities(last = 86400)
 end
 
 def log_activity(activity)
-  last_utime = `#{sql} "select utime from activity order by utime desc limit 1 offset 1;"`.chomp
-  now        = `#{sql} "select strftime('%s', 'now');"`.chomp
-  last_apm   = `#{sql} "select sum(apm) from apm where utime > (select strftime('%s', 'now'))-360"`.chomp
+  last_activity = get_last_activity.chomp
+  if $streak <= 120 and last_activity != 'afk'
+    if $streak > 0
+      puts "Short switch: #{$streak}s, continuing to log #{last_activity}"
+    end
+    log_activity!(activity, activity)
+    if last_activity == activity
+      $streak = 0
+    else
+      $streak += 10
+    end
+  else
+    log_activity!(activity, last_activity)
+  end
+end
+
+def log_activity!(activity, last_activity = nil)
+  last_utime  = `#{sql} "select utime from activity order by utime desc limit 1 offset 1;"`.chomp
+  now         = `#{sql} "select strftime('%s', 'now');"`.chomp
+  last_apm    = `#{sql} "select sum(apm) from apm where utime > (select strftime('%s', 'now'))-360"`.chomp
   unless last_utime == ""
     last_utime = Integer(last_utime)
   else
-    last_utime = -121
+    last_utime = Integer(`#{sql} "select strftime('%s', 'now');"`.chomp)
   end
   unless now == ""
     now = Integer(now)
@@ -100,15 +119,17 @@ def log_activity(activity)
   else
     last_apm = 0
   end
-  if last_apm == 0 and activity != "movies"
+  if last_apm == 0 and (activity != "movies" or activity != "reading")
     activity='afk'
   end
-  if get_last_activity.chomp == activity
+  if last_activity == activity
   `#{sql} "update activity set utime=(select strftime('%s','now')), streak=(select strftime('%s','now')-#{last_utime}) where utime=(
             select utime from activity order by utime desc limit 1
           );"`
   else
+    puts "#{`date`.chomp} :: Activity switched to #{activity}"
     `#{sql} "insert into activity (utime, name, streak) values ((select strftime('%s','now')), '#{activity}', 10);"`
+    $streak = 10
   end
 end
 
