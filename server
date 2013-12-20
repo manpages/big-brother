@@ -12,7 +12,7 @@
 # but why can't scripting languages learn something about the pros and cons
 # of releases?
 #
-# And script writers should use fucking Makefiles to put their shit where it
+# And script writers should use fucking Makefiles to print their shit where it
 # needs to go and to revert it after user is frustrated with the fact that 
 # installed scripts are slow as fuck and don't do what they should.
 # I wanted to write a software that will be cross platform, that can be 
@@ -38,6 +38,11 @@
 require 'socket'
 
 $streak = 0
+
+def sputs(x)
+  puts
+  puts x
+end
 
 def reply(resp, client)
   headers = ["http/1.1 200 ok",
@@ -87,7 +92,7 @@ def log_activity(activity)
   last_activity = get_last_activity.chomp
   if $streak <= 120 and last_activity != 'afk'
     if $streak > 0
-      puts "Short switch: #{$streak}s, continuing to log #{last_activity}"
+      sputs "Short switch: #{$streak}s, continuing to log #{last_activity}"
     end
     log_activity!(activity, activity)
     if last_activity == activity
@@ -101,6 +106,7 @@ def log_activity(activity)
 end
 
 def log_activity!(activity, last_activity = nil)
+  print '.'
   last_utime  = `#{sql} "select utime from activity order by utime desc limit 1 offset 1;"`.chomp
   now         = `#{sql} "select strftime('%s', 'now');"`.chomp
   last_apm    = `#{sql} "select sum(apm) from apm where utime > (select strftime('%s', 'now'))-360"`.chomp
@@ -119,7 +125,8 @@ def log_activity!(activity, last_activity = nil)
   else
     last_apm = 0
   end
-  if last_apm == 0 and (activity != "movies" or activity != "reading")
+  unless last_apm > 0 or activity == "movies" or activity == "reading"
+    sputs "Overriding activity #{activity} with 'afk'."
     activity='afk'
   end
   if last_activity == activity
@@ -127,7 +134,7 @@ def log_activity!(activity, last_activity = nil)
             select utime from activity order by utime desc limit 1
           );"`
   else
-    puts "#{`date`.chomp} :: Activity switched to #{activity}"
+    sputs "#{`date`.chomp} :: Activity switched to #{activity}"
     `#{sql} "insert into activity (utime, name, streak) values ((select strftime('%s','now')), '#{activity}', 10);"`
     $streak = 10
   end
@@ -147,6 +154,7 @@ def log_apm(apm)
 end
 
 def plot(from = '/tmp/apm')
+  print '!'
   cmd="echo \"#{get_apm}\" > #{from}"
   `#{cmd}`
   `./plot`
@@ -154,7 +162,7 @@ end
 
 def apmd
   trap('USR2') do
-    puts "Shutting down AMP daemon"
+    sputs "Shutting down AMP daemon"
     return
   end
   loop {
@@ -165,7 +173,7 @@ end
 
 def activityd
   trap('HUP') do
-    puts "Shutting down activity daemon"
+    sputs "Shutting down activity daemon"
     return
   end
   loop {
@@ -186,7 +194,7 @@ def main
     activityd
   }
   trap('USR1') do
-    puts "Shutting down daemons"
+    sputs "Shutting down daemons"
     Process.kill('USR2', pid1)
     Process.wait(pid1)
     Process.kill('HUP', pid2)
@@ -200,10 +208,10 @@ pid = fork {
 }
 
 server = TCPServer.open 1984
-puts "Big Brother is watching you on port 1984."
+sputs "Big Brother is watching you on port 1984."
 
 trap('INT') do
-  puts "Shutting down gracefully"
+  sputs "Shutting down gracefully"
   log_activity 'afk'
   Process.kill('USR1', pid)
   Process.wait(pid)
