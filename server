@@ -1,6 +1,6 @@
 #!/usr/bin/ruby
 #
-# I'm frustrated about the current state of deployment of fucking scripts.
+# I'm frustrated with the current state of deployment of fucking scripts.
 # Programs in python and ruby are fucking scripts, those should be deployable
 # like G-d damn PHP shit or statically linked binaries. With all the fucking
 # libraries included, without conflicts with ridiculous policies of different
