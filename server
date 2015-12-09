@@ -1,4 +1,4 @@
-#!/usr/bin/ruby
+#!/usr/bin/env ruby
 #
 # I'm frustrated with the current state of deployment of fucking scripts.
 # Programs in python and ruby are fucking scripts, those should be deployable
@@ -91,7 +91,7 @@ def log_activity(activity)
   last_activity = get_last_activity.chomp
   if $streak <= 120 and last_activity != 'afk'
     if $streak > 0
-      sputs "Short switch: #{$streak}s, continuing to log #{last_activity}"
+      sputs "Short switch: #{$streak}s: refusing to log #{activity}, continuing to log #{last_activity} instead"
     end
     log_activity!(activity, activity)
     if last_activity == activity
